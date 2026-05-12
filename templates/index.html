@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Library System</title>
+</head>
+<body>
+
+    <h1>Smart Library Management System</h1>
+
+    <hr>
+
+    <a href="/add">Add Book</a>
+    <br><br>
+
+    <a href="/borrow">Borrow Book</a>
+    <br><br>
+
+    <a href="/return">Return Book</a>
+
+    <hr>
+
+    <h2>Book List</h2>
+
+    <table border="1" cellpadding="10">
+
+        <tr>
+            <th>Book ID</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Status</th>
+        </tr>
+
+        {% for book in books %}
+
+        <tr>
+            <td>{{ book.id }}</td>
+            <td>{{ book.title }}</td>
+            <td>{{ book.author }}</td>
+
+            <td>
+                {% if book.available %}
+                    Available
+                {% else %}
+                    Borrowed
+                {% endif %}
+            </td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</body>
+</html>
