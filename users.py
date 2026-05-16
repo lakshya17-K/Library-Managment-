@@ -23,13 +23,11 @@ class Admin(User):
         book_id = int(input("Enter Book ID: "))
         title = input("Enter Book Title: ")
         author = input("Enter Author Name: ")
-        genre = input("Enter Genre: ")
 
         new_book = Book(
             book_id,
             title,
-            author,
-            genre
+            author
         )
 
         library.add_book(new_book)
