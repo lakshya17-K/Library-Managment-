@@ -92,6 +92,11 @@ input{
     height:50px;
 }
 
+.alert{
+
+    border-radius:12px;
+}
+
 </style>
 
 </head>
@@ -106,6 +111,20 @@ input{
         🔐 Login
 
     </h1>
+
+    {% with messages = get_flashed_messages() %}
+
+        {% if messages %}
+
+            <div class="alert alert-danger text-center">
+
+                {{ messages[0] }}
+
+            </div>
+
+        {% endif %}
+
+    {% endwith %}
 
     <form method="POST">
 
@@ -154,4 +173,5 @@ AOS.init({
 </script>
 
 </body>
+
 </html>
