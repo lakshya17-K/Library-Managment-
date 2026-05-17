@@ -55,7 +55,9 @@ class User(UserMixin):
     def __init__(self, id, username, password):
 
         self.id = str(id)
+
         self.username = username
+
         self.password = password
 
 
@@ -103,21 +105,31 @@ class Book:
     def __init__(self, book_id, title, author):
 
         self.id = book_id
+
         self.title = title
+
         self.author = author
 
         self.available = True
+
         self.borrowed_by = ""
+
         self.borrow_date = ""
 
     def to_dict(self):
 
         return {
+
             "id": self.id,
+
             "title": self.title,
+
             "author": self.author,
+
             "available": self.available,
+
             "borrowed_by": self.borrowed_by,
+
             "borrow_date": self.borrow_date
         }
 
@@ -180,11 +192,24 @@ def register():
 
         conn.commit()
 
+        cursor.execute(
+            "SELECT * FROM users WHERE username = ?",
+            (username,)
+        )
+
+        user = cursor.fetchone()
+
         conn.close()
 
-        flash("Registration successful")
+        logged_user = User(
+            user[0],
+            user[1],
+            user[2]
+        )
 
-        return redirect(url_for("login"))
+        login_user(logged_user)
+
+        return redirect(url_for("home"))
 
     return render_template("register.html")
 
@@ -211,7 +236,10 @@ def login():
 
         conn.close()
 
-        if user and check_password_hash(user[2], password):
+        if user and check_password_hash(
+            user[2],
+            password
+        ):
 
             logged_user = User(
                 user[0],
@@ -256,7 +284,9 @@ def add_book():
 
     if request.method == "POST":
 
-        book_id = int(request.form["id"])
+        book_id = int(
+            request.form["id"]
+        )
 
         title = request.form["title"]
 
@@ -276,9 +306,13 @@ def add_book():
 
         Library.save_books(books)
 
-        return redirect(url_for("home"))
+        return redirect(
+            url_for("home")
+        )
 
-    return render_template("add_book.html")
+    return render_template(
+        "add_book.html"
+    )
 
 
 @app.route("/borrow", methods=["GET", "POST"])
@@ -289,7 +323,9 @@ def borrow_book():
 
         student_name = request.form["student"]
 
-        book_id = int(request.form["book_id"])
+        book_id = int(
+            request.form["book_id"]
+        )
 
         books = Library.get_books()
 
@@ -309,9 +345,13 @@ def borrow_book():
 
         Library.save_books(books)
 
-        return redirect(url_for("home"))
+        return redirect(
+            url_for("home")
+        )
 
-    return render_template("borrow_book.html")
+    return render_template(
+        "borrow_book.html"
+    )
 
 
 @app.route("/return", methods=["GET", "POST"])
@@ -322,7 +362,9 @@ def return_book():
 
     if request.method == "POST":
 
-        book_id = int(request.form["book_id"])
+        book_id = int(
+            request.form["book_id"]
+        )
 
         books = Library.get_books()
 
@@ -341,7 +383,9 @@ def return_book():
                         datetime.now() - borrow_date
                     ).days
 
-                    fine = FineStrategy.calculate_fine(days_used)
+                    fine = FineStrategy.calculate_fine(
+                        days_used
+                    )
 
                     book["available"] = True
 
