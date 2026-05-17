@@ -1,9 +1,26 @@
 from flask import Flask, render_template, request, redirect, url_for
+from flask_login import LoginManager
+from flask_login import UserMixin
+from flask_login import login_user
+from flask_login import login_required
+from flask_login import logout_user
+from flask_login import current_user
+from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
+
 import json
 import os
 from datetime import datetime
 
 app = Flask(__name__)
+
+app.secret_key = "supersecretkey"
+
+login_manager = LoginManager()
+
+login_manager.init_app(app)
+
+login_manager.login_view = "login"
 
 BOOKS_FILE = "books.json"
 
@@ -13,6 +30,47 @@ if not os.path.exists(BOOKS_FILE):
     with open(BOOKS_FILE, "w") as file:
 
         json.dump([], file)
+
+
+class User(UserMixin):
+
+    def __init__(self, id, username, password):
+
+        self.id = id
+
+        self.username = username
+
+        self.password = password
+
+
+users = {
+
+    "admin": {
+
+        "password":
+        generate_password_hash("admin123")
+    },
+
+    "student": {
+
+        "password":
+        generate_password_hash("student123")
+    }
+}
+
+
+@login_manager.user_loader
+def load_user(user_id):
+
+    if user_id in users:
+
+        return User(
+            user_id,
+            user_id,
+            users[user_id]["password"]
+        )
+
+    return None
 
 
 class FineStrategy:
@@ -82,18 +140,63 @@ class Library:
             )
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+
+        password = request.form["password"]
+
+        if username in users and check_password_hash(
+            users[username]["password"],
+            password
+        ):
+
+            user = User(
+                username,
+                username,
+                users[username]["password"]
+            )
+
+            login_user(user)
+
+            return redirect(
+                url_for("home")
+            )
+
+    return render_template(
+        "login.html"
+    )
+
+
+@app.route("/logout")
+@login_required
+def logout():
+
+    logout_user()
+
+    return redirect(
+        url_for("login")
+    )
+
+
 @app.route("/")
+@login_required
 def home():
 
     books = Library.get_books()
 
     return render_template(
         "index.html",
-        books=books
+        books=books,
+        user=current_user.username
     )
 
 
 @app.route("/add", methods=["GET", "POST"])
+@login_required
 def add_book():
 
     if request.method == "POST":
@@ -128,6 +231,7 @@ def add_book():
 
 
 @app.route("/borrow", methods=["GET", "POST"])
+@login_required
 def borrow_book():
 
     if request.method == "POST":
@@ -166,6 +270,7 @@ def borrow_book():
 
 
 @app.route("/return", methods=["GET", "POST"])
+@login_required
 def return_book():
 
     fine = None
@@ -208,14 +313,6 @@ def return_book():
     return render_template(
         "return_book.html",
         fine=fine
-    )
-
-
-@app.route("/logout")
-def logout():
-
-    return redirect(
-        url_for("home")
     )
 
 
