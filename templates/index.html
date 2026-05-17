@@ -8,7 +8,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>Smart Library System</title>
+    <title>Smart Library</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet">
@@ -16,78 +16,382 @@
     <link href="https://unpkg.com/aos@2.3.4/dist/aos.css"
           rel="stylesheet">
 
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }
+
+        body{
+
+            min-height:100vh;
+
+            background: linear-gradient(
+                -45deg,
+                #0f172a,
+                #111827,
+                #312e81,
+                #1e293b
+            );
+
+            background-size:400% 400%;
+
+            animation: gradientBG 12s ease infinite;
+
+            overflow-x:hidden;
+
+            color:white;
+        }
+
+        @keyframes gradientBG{
+
+            0%{
+                background-position:0% 50%;
+            }
+
+            50%{
+                background-position:100% 50%;
+            }
+
+            100%{
+                background-position:0% 50%;
+            }
+        }
+
+        #particles-js{
+
+            position:fixed;
+
+            width:100%;
+            height:100%;
+
+            top:0;
+            left:0;
+
+            z-index:-1;
+        }
+
+        .navbar{
+
+            background:rgba(0,0,0,0.3);
+
+            backdrop-filter:blur(15px);
+
+            border-bottom:1px solid rgba(255,255,255,0.1);
+        }
+
+        .brand{
+
+            font-size:2rem;
+
+            font-weight:bold;
+
+            animation:floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating{
+
+            0%{
+                transform:translateY(0px);
+            }
+
+            50%{
+                transform:translateY(-8px);
+            }
+
+            100%{
+                transform:translateY(0px);
+            }
+        }
+
+        .hero{
+
+            text-align:center;
+
+            margin-top:70px;
+        }
+
+        .hero h1{
+
+            font-size:4rem;
+
+            font-weight:bold;
+
+            background:linear-gradient(
+                to right,
+                #38bdf8,
+                #818cf8,
+                #c084fc
+            );
+
+            -webkit-background-clip:text;
+
+            -webkit-text-fill-color:transparent;
+
+            animation: glow 2s infinite alternate;
+        }
+
+        @keyframes glow{
+
+            from{
+                text-shadow:0 0 10px #38bdf8;
+            }
+
+            to{
+                text-shadow:0 0 30px #c084fc;
+            }
+        }
+
+        .hero p{
+
+            color:#d1d5db;
+
+            font-size:1.2rem;
+
+            margin-top:20px;
+        }
+
+        .glass-card{
+
+            background:rgba(255,255,255,0.08);
+
+            backdrop-filter:blur(15px);
+
+            border:1px solid rgba(255,255,255,0.1);
+
+            border-radius:25px;
+
+            padding:30px;
+
+            margin-top:50px;
+
+            box-shadow:0 8px 32px rgba(0,0,0,0.4);
+
+            transition:0.4s;
+        }
+
+        .glass-card:hover{
+
+            transform:
+            rotateY(4deg)
+            rotateX(4deg)
+            scale(1.01);
+        }
+
+        .custom-btn{
+
+            padding:14px 30px;
+
+            border:none;
+
+            border-radius:15px;
+
+            font-size:1rem;
+
+            font-weight:bold;
+
+            transition:0.3s;
+
+            box-shadow:
+            0 0 15px rgba(255,255,255,0.2),
+            0 0 30px rgba(59,130,246,0.4);
+        }
+
+        .custom-btn:hover{
+
+            transform:translateY(-5px) scale(1.05);
+
+            box-shadow:
+            0 0 20px rgba(255,255,255,0.4),
+            0 0 40px rgba(59,130,246,0.8);
+        }
+
+        table{
+
+            overflow:hidden;
+
+            border-radius:20px;
+        }
+
+        .table-dark{
+
+            --bs-table-bg:transparent;
+        }
+
+        .table tbody tr{
+
+            transition:0.3s;
+        }
+
+        .table tbody tr:hover{
+
+            transform:scale(1.01);
+
+            background:rgba(255,255,255,0.08);
+        }
+
+        .badge{
+
+            padding:10px 14px;
+
+            border-radius:10px;
+        }
+
+        .typing{
+
+            overflow:hidden;
+
+            white-space:nowrap;
+
+            border-right:3px solid white;
+
+            width:0;
+
+            margin:auto;
+
+            animation:
+            typing 4s steps(30,end) forwards,
+            blink 0.8s infinite;
+        }
+
+        @keyframes typing{
+
+            from{
+                width:0;
+            }
+
+            to{
+                width:100%;
+            }
+        }
+
+        @keyframes blink{
+
+            50%{
+                border-color:transparent;
+            }
+        }
+
+        .logout-btn{
+
+            border-radius:12px;
+
+            transition:0.3s;
+        }
+
+        .logout-btn:hover{
+
+            transform:scale(1.08);
+        }
+
+    </style>
+
 </head>
 
-<body class="bg-dark text-light">
+<body>
 
-    <nav class="navbar navbar-dark bg-black shadow-lg">
+    <div id="particles-js"></div>
 
-        <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-dark px-4 py-3">
 
-            <span class="navbar-brand fw-bold fs-3"
-                  data-aos="fade-right">
+        <div class="container-fluid">
 
-                📚 Smart Library
+            <span class="navbar-brand brand">
+
+                <i class="fa-solid fa-book-open"></i>
+                Smart Library
 
             </span>
+
+            <div class="d-flex align-items-center gap-3">
+
+                <span>
+                    Welcome {{ user }}
+                </span>
+
+                <a href="/logout"
+                   class="btn btn-danger logout-btn">
+
+                    Logout
+
+                </a>
+
+            </div>
 
         </div>
 
     </nav>
 
-    <div class="container mt-5">
+    <div class="container">
 
-        <div class="text-center mb-5"
+        <div class="hero"
              data-aos="zoom-in">
 
-            <h1 class="fw-bold">
-                Welcome to Smart Library Management System
+            <h1 class="typing">
+                Smart Library System
             </h1>
 
-            <p class="text-secondary">
-                Manage books easily using Flask
+            <p>
+                Futuristic Flask Powered Library Dashboard
             </p>
 
         </div>
 
-        <div class="d-flex justify-content-center gap-3 mb-5">
+        <div class="d-flex justify-content-center gap-4 flex-wrap mt-5"
+             data-aos="fade-up">
 
             <a href="/add"
-               class="btn btn-success btn-lg"
-               data-aos="fade-up">
+               class="btn btn-success custom-btn">
 
+                <i class="fa-solid fa-plus"></i>
                 Add Book
 
             </a>
 
             <a href="/borrow"
-               class="btn btn-warning btn-lg"
-               data-aos="fade-up"
-               data-aos-delay="200">
+               class="btn btn-warning custom-btn">
 
+                <i class="fa-solid fa-book"></i>
                 Borrow Book
 
             </a>
 
             <a href="/return"
-               class="btn btn-danger btn-lg"
-               data-aos="fade-up"
-               data-aos-delay="400">
+               class="btn btn-danger custom-btn">
 
+                <i class="fa-solid fa-rotate-left"></i>
                 Return Book
 
             </a>
 
         </div>
 
-        <div class="card bg-black border-secondary shadow-lg"
+        <div class="glass-card"
              data-aos="fade-up">
 
-            <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
 
-                <h2 class="mb-4">
-                    Book List
+                <h2>
+
+                    <i class="fa-solid fa-layer-group"></i>
+                    Library Books
+
                 </h2>
+
+                <span class="badge bg-primary">
+
+                    {{ books|length }} Books
+
+                </span>
+
+            </div>
+
+            <div class="table-responsive">
 
                 <table class="table table-dark table-hover align-middle">
 
@@ -112,7 +416,13 @@
 
                             <td>{{ book.id }}</td>
 
-                            <td>{{ book.title }}</td>
+                            <td>
+
+                                <i class="fa-solid fa-book-open text-info"></i>
+
+                                {{ book.title }}
+
+                            </td>
 
                             <td>{{ book.author }}</td>
 
@@ -121,13 +431,17 @@
                                 {% if book.available %}
 
                                 <span class="badge bg-success">
+
                                     Available
+
                                 </span>
 
                                 {% else %}
 
                                 <span class="badge bg-danger">
+
                                     Borrowed
+
                                 </span>
 
                                 {% endif %}
@@ -150,12 +464,50 @@
 
     <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
     <script>
+
         AOS.init({
-            duration: 1000,
-            once: true
+            duration:1200,
+            once:true
         });
+
+        particlesJS("particles-js", {
+
+            particles: {
+
+                number: {
+                    value: 90
+                },
+
+                color: {
+                    value: "#ffffff"
+                },
+
+                shape: {
+                    type: "circle"
+                },
+
+                opacity: {
+                    value: 0.5
+                },
+
+                size: {
+                    value: 3
+                },
+
+                move: {
+                    enable: true,
+                    speed: 2
+                }
+
+            }
+
+        });
+
     </script>
 
 </body>
+
 </html>
