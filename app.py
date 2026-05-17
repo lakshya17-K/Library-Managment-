@@ -18,10 +18,13 @@ app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 login_manager = LoginManager()
+
 login_manager.init_app(app)
+
 login_manager.login_view = "login"
 
 BOOKS_FILE = "books.json"
+
 DATABASE = "database.db"
 
 
@@ -47,6 +50,7 @@ cursor.execute(
 )
 
 conn.commit()
+
 conn.close()
 
 
@@ -158,12 +162,18 @@ class Library:
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
+    if current_user.is_authenticated:
+
+        return redirect(url_for("home"))
+
     if request.method == "POST":
 
-        username = request.form["username"]
+        username = request.form["username"].strip()
 
-        password = generate_password_hash(
-            request.form["password"]
+        password = request.form["password"].strip()
+
+        hashed_password = generate_password_hash(
+            password
         )
 
         conn = sqlite3.connect(DATABASE)
@@ -183,11 +193,16 @@ def register():
 
             conn.close()
 
-            return redirect(url_for("register"))
+            return redirect(
+                url_for("register")
+            )
 
         cursor.execute(
             "INSERT INTO users (username, password) VALUES (?, ?)",
-            (username, password)
+            (
+                username,
+                hashed_password
+            )
         )
 
         conn.commit()
@@ -209,19 +224,29 @@ def register():
 
         login_user(logged_user)
 
-        return redirect(url_for("home"))
+        return redirect(
+            url_for("home")
+        )
 
-    return render_template("register.html")
+    return render_template(
+        "register.html"
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
+    if current_user.is_authenticated:
+
+        return redirect(
+            url_for("home")
+        )
+
     if request.method == "POST":
 
-        username = request.form["username"]
+        username = request.form["username"].strip()
 
-        password = request.form["password"]
+        password = request.form["password"].strip()
 
         conn = sqlite3.connect(DATABASE)
 
@@ -236,24 +261,34 @@ def login():
 
         conn.close()
 
-        if user and check_password_hash(
-            user[2],
-            password
-        ):
+        if user:
 
-            logged_user = User(
-                user[0],
-                user[1],
-                user[2]
-            )
+            stored_password = user[2]
 
-            login_user(logged_user)
+            if check_password_hash(
+                stored_password,
+                password
+            ):
 
-            return redirect(url_for("home"))
+                logged_user = User(
+                    user[0],
+                    user[1],
+                    user[2]
+                )
 
-        flash("Invalid username or password")
+                login_user(logged_user)
 
-    return render_template("login.html")
+                return redirect(
+                    url_for("home")
+                )
+
+        flash(
+            "Invalid username or password"
+        )
+
+    return render_template(
+        "login.html"
+    )
 
 
 @app.route("/logout")
@@ -262,7 +297,9 @@ def logout():
 
     logout_user()
 
-    return redirect(url_for("login"))
+    return redirect(
+        url_for("login")
+    )
 
 
 @app.route("/")
