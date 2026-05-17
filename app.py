@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager
 from flask_login import UserMixin
 from flask_login import login_user
@@ -8,6 +8,7 @@ from flask_login import current_user
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
 
+import sqlite3
 import json
 import os
 from datetime import datetime
@@ -17,12 +18,11 @@ app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 login_manager = LoginManager()
-
 login_manager.init_app(app)
-
 login_manager.login_view = "login"
 
 BOOKS_FILE = "books.json"
+DATABASE = "database.db"
 
 
 if not os.path.exists(BOOKS_FILE):
@@ -32,42 +32,55 @@ if not os.path.exists(BOOKS_FILE):
         json.dump([], file)
 
 
+conn = sqlite3.connect(DATABASE)
+
+cursor = conn.cursor()
+
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
+    )
+    """
+)
+
+conn.commit()
+conn.close()
+
+
 class User(UserMixin):
 
     def __init__(self, id, username, password):
 
-        self.id = id
-
+        self.id = str(id)
         self.username = username
-
         self.password = password
-
-
-users = {
-
-    "admin": {
-
-        "password":
-        generate_password_hash("admin123")
-    },
-
-    "student": {
-
-        "password":
-        generate_password_hash("student123")
-    }
-}
 
 
 @login_manager.user_loader
 def load_user(user_id):
 
-    if user_id in users:
+    conn = sqlite3.connect(DATABASE)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM users WHERE id = ?",
+        (user_id,)
+    )
+
+    user = cursor.fetchone()
+
+    conn.close()
+
+    if user:
 
         return User(
-            user_id,
-            user_id,
-            users[user_id]["password"]
+            user[0],
+            user[1],
+            user[2]
         )
 
     return None
@@ -90,31 +103,21 @@ class Book:
     def __init__(self, book_id, title, author):
 
         self.id = book_id
-
         self.title = title
-
         self.author = author
 
         self.available = True
-
         self.borrowed_by = ""
-
         self.borrow_date = ""
 
     def to_dict(self):
 
         return {
-
             "id": self.id,
-
             "title": self.title,
-
             "author": self.author,
-
             "available": self.available,
-
             "borrowed_by": self.borrowed_by,
-
             "borrow_date": self.borrow_date
         }
 
@@ -140,6 +143,52 @@ class Library:
             )
 
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+
+        password = generate_password_hash(
+            request.form["password"]
+        )
+
+        conn = sqlite3.connect(DATABASE)
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM users WHERE username = ?",
+            (username,)
+        )
+
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+
+            flash("Username already exists")
+
+            conn.close()
+
+            return redirect(url_for("register"))
+
+        cursor.execute(
+            "INSERT INTO users (username, password) VALUES (?, ?)",
+            (username, password)
+        )
+
+        conn.commit()
+
+        conn.close()
+
+        flash("Registration successful")
+
+        return redirect(url_for("login"))
+
+    return render_template("register.html")
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
@@ -149,26 +198,34 @@ def login():
 
         password = request.form["password"]
 
-        if username in users and check_password_hash(
-            users[username]["password"],
-            password
-        ):
+        conn = sqlite3.connect(DATABASE)
 
-            user = User(
-                username,
-                username,
-                users[username]["password"]
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM users WHERE username = ?",
+            (username,)
+        )
+
+        user = cursor.fetchone()
+
+        conn.close()
+
+        if user and check_password_hash(user[2], password):
+
+            logged_user = User(
+                user[0],
+                user[1],
+                user[2]
             )
 
-            login_user(user)
+            login_user(logged_user)
 
-            return redirect(
-                url_for("home")
-            )
+            return redirect(url_for("home"))
 
-    return render_template(
-        "login.html"
-    )
+        flash("Invalid username or password")
+
+    return render_template("login.html")
 
 
 @app.route("/logout")
@@ -177,9 +234,7 @@ def logout():
 
     logout_user()
 
-    return redirect(
-        url_for("login")
-    )
+    return redirect(url_for("login"))
 
 
 @app.route("/")
@@ -221,13 +276,9 @@ def add_book():
 
         Library.save_books(books)
 
-        return redirect(
-            url_for("home")
-        )
+        return redirect(url_for("home"))
 
-    return render_template(
-        "add_book.html"
-    )
+    return render_template("add_book.html")
 
 
 @app.route("/borrow", methods=["GET", "POST"])
@@ -238,9 +289,7 @@ def borrow_book():
 
         student_name = request.form["student"]
 
-        book_id = int(
-            request.form["book_id"]
-        )
+        book_id = int(request.form["book_id"])
 
         books = Library.get_books()
 
@@ -260,13 +309,9 @@ def borrow_book():
 
         Library.save_books(books)
 
-        return redirect(
-            url_for("home")
-        )
+        return redirect(url_for("home"))
 
-    return render_template(
-        "borrow_book.html"
-    )
+    return render_template("borrow_book.html")
 
 
 @app.route("/return", methods=["GET", "POST"])
@@ -277,9 +322,7 @@ def return_book():
 
     if request.method == "POST":
 
-        book_id = int(
-            request.form["book_id"]
-        )
+        book_id = int(request.form["book_id"])
 
         books = Library.get_books()
 
@@ -298,9 +341,7 @@ def return_book():
                         datetime.now() - borrow_date
                     ).days
 
-                    fine = FineStrategy.calculate_fine(
-                        days_used
-                    )
+                    fine = FineStrategy.calculate_fine(days_used)
 
                     book["available"] = True
 
